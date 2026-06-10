@@ -102,6 +102,7 @@ text RevQ/ ├── app/ │   ├── frontend (React + Vite) │   └─�
 
 ## Run
 
+https://quickcommerceintelligencesystem-mlbk8ybw7mhtgicvdse7qo.streamlit.app
 
 ---
 
