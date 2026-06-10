@@ -22,6 +22,26 @@ DATA_FILES = [
 PLATFORM_LABELS = {"blinkit": "Blinkit", "zepto": "Zepto", "instamart": "Instamart"}
 PLATFORM_ORDER = ["blinkit", "zepto", "instamart"]
 
+_CSS = """
+<style>
+h1 { font-size: 1.6rem; letter-spacing: -0.01em; }
+.stMarkdown h3 { font-size: 0.85rem !important; text-transform: uppercase;
+     letter-spacing: 0.08em; color: #6b7280 !important; font-weight: 600;
+     padding-bottom: 0; }
+.product-title { font-size: 1.25rem; font-weight: 600; margin: 0.25rem 0 0; }
+.brand-label { color: #6b7280; font-size: 0.8rem; text-transform: uppercase;
+               letter-spacing: 0.08em; }
+.avail-row { padding: 0.7rem 0; border-bottom: 1px solid #e5e7eb; }
+.avail-row:last-child { border-bottom: none; }
+.platform-name { font-weight: 600; }
+.status-live { color: #15803d; }
+.status-partial { color: #b45309; }
+.status-out { color: #b91c1c; }
+.status-unlisted { color: #9ca3af; }
+.row-meta { color: #9ca3af; font-size: 0.78rem; margin-top: 0.15rem; }
+</style>
+"""
+
 
 @st.cache_resource
 def ensure_db() -> str:
@@ -43,9 +63,14 @@ def query(sql: str, params: tuple = ()) -> list[dict]:
         conn.close()
 
 
-st.set_page_config(page_title="Quick-Commerce Brand Intelligence", page_icon="🛒")
-st.title("🛒 Quick-Commerce Brand Intelligence")
-st.caption("Cross-platform product identity, pricing, and availability for Yogabar across Blinkit, Zepto, and Instamart.")
+st.set_page_config(page_title="Quick-Commerce Brand Intelligence", layout="centered")
+st.markdown(_CSS, unsafe_allow_html=True)
+
+st.title("Quick-Commerce Brand Intelligence")
+st.caption(
+    "Cross-platform product identity, pricing, and availability for Yogabar "
+    "across Blinkit, Zepto, and Instamart."
+)
 
 products = query("SELECT id, canonical_name, brand FROM products ORDER BY category, canonical_name")
 if not products:
@@ -71,10 +96,14 @@ listings = query(
 )
 by_platform = {row["platform"]: row for row in listings}
 
-st.subheader(selected["canonical_name"])
-st.caption(f"Brand: {selected['brand']}")
+st.markdown(
+    f"<p class='brand-label'>{selected['brand']}</p>"
+    f"<p class='product-title'>{selected['canonical_name']}</p>",
+    unsafe_allow_html=True,
+)
+st.divider()
 
-st.markdown("#### Price comparison")
+st.markdown("### Price comparison")
 price_rows = []
 for platform in PLATFORM_ORDER:
     row = by_platform.get(platform)
@@ -82,24 +111,28 @@ for platform in PLATFORM_ORDER:
         discount = round((row["mrp"] - row["selling_price"]) / row["mrp"] * 100) if row["mrp"] else None
         price_rows.append({
             "Platform": PLATFORM_LABELS[platform],
-            "Selling Price": f"₹{row['selling_price']}",
+            "Selling price": f"₹{row['selling_price']}",
             "MRP": f"₹{row['mrp']}",
-            "Discount": f"{discount}% off" if discount is not None else "—",
+            "Discount": f"{discount}%" if discount is not None else "—",
         })
     else:
         price_rows.append({
             "Platform": PLATFORM_LABELS[platform],
-            "Selling Price": "Not listed",
+            "Selling price": "Not listed",
             "MRP": "—",
             "Discount": "—",
         })
 st.table(price_rows)
 
-st.markdown("#### Availability by pincode")
+st.markdown("### Availability by pincode")
 for platform in PLATFORM_ORDER:
     row = by_platform.get(platform)
     if not row:
-        st.markdown(f"**{PLATFORM_LABELS[platform]}** — not listed on this platform")
+        st.markdown(
+            f"<div class='avail-row'><span class='platform-name'>{PLATFORM_LABELS[platform]}</span>"
+            f" <span class='status-unlisted'>· Not listed on this platform</span></div>",
+            unsafe_allow_html=True,
+        )
         continue
 
     availability = query(
@@ -116,10 +149,21 @@ for platform in PLATFORM_ORDER:
     live = sum(1 for a in availability if a["in_stock"] == 1)
     oos = [a["pincode"] for a in availability if a["in_stock"] == 0]
 
-    if live == total and total > 0:
-        st.success(f"**{PLATFORM_LABELS[platform]}** — live in {live} of {total} pincodes")
+    if total > 0 and live == total:
+        status = f"<span class='status-live'>Live in {live} of {total} pincodes</span>"
     elif live == 0:
-        st.error(f"**{PLATFORM_LABELS[platform]}** — out of stock in all {total} pincodes")
+        status = f"<span class='status-out'>Out of stock in all {total} pincodes</span>"
     else:
-        st.warning(f"**{PLATFORM_LABELS[platform]}** — live in {live} of {total} pincodes · out of stock: {', '.join(oos)}")
-    st.caption(f"Listed as “{row['platform_name']}” · last scraped {row['scraped_at'] or 'never'}")
+        status = (
+            f"<span class='status-partial'>Live in {live} of {total} pincodes"
+            f" · out of stock: {', '.join(oos)}</span>"
+        )
+
+    st.markdown(
+        f"<div class='avail-row'>"
+        f"<span class='platform-name'>{PLATFORM_LABELS[platform]}</span> · {status}"
+        f"<div class='row-meta'>Listed as “{row['platform_name']}”"
+        f" · last scraped {row['scraped_at'] or 'never'}</div>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
