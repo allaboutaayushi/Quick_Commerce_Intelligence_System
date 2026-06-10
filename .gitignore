@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+app/dist/
+ingest/revq.db
+ingest/revq.db-shm
+ingest/revq.db-wal
+.claude/
+.sixth/

@@ -1,0 +1,24 @@
+{
+  "name": "revq-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:server": "node server.js",
+    "dev:client": "vite",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "vite build",
+    "start": "NODE_ENV=production node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "vite": "^5.1.6"
+  }
+}
