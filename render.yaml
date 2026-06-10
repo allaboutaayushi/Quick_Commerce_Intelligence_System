@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: quick-commerce-intelligence
+    runtime: node
+    plan: free
+    buildCommand: cd ingest && python3 ingest.py ../data/blinkit_sample.json && python3 ingest.py ../data/zepto_sample.json && python3 ingest.py ../data/instamart_sample.json && cd ../app && npm install && npm run build
+    startCommand: cd app && node server.js
